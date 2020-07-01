@@ -3,6 +3,7 @@
 [![Build status](https://github.com/junnlikestea/bulkssrf/workflows/Continuous%20integration/badge.svg)](https://github.com/junnlikestea/bulkssrf/actions)
 
 This is a Rust port of [m4ll0k](https://twitter.com/m4ll0k2) `ssrf.py` script. 
+
 ### Installation
 Precompiled binaries for bssrf are available in the [releases](https://github.com/junnlikestea/bulkssrf/releases) tab. Just pick your platform and extract the archive that contains the binary.
 
@@ -33,6 +34,8 @@ info with the `-v` for verbose flag:
 ```
 gau hackerone.com | bssrf -v -t 10 -l xyzburpcollaborator.com 
 ```
+### Common error
+BulkSSRF uses async concurrent http requests under the hood. If you encounter an error similar to "Too many open files" it means that there isn't enough available file descriptors on your system. You can fix this by increasing the limits available. There are lots of different guides available to increase the limits, [but here is one for linux](https://www.tecmint.com/increase-set-open-file-limits-in-linux/). I actually ran into this problem while writing the code.
 
 ### Disclaimer
 Developers have/has no responsibility or authority over any kind of:
