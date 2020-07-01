@@ -28,23 +28,23 @@ async fn main() -> Result<()> {
         urls = read_stdin()?;
     }
 
-    run(urls, location.to_string(), timeout, verbose).await;
+    run(urls, location.to_owned(), timeout, verbose).await;
     Ok(())
 }
 
 fn create_clap_app(version: &str) -> clap::App {
     // Add support to not include subdomains.
-    App::new("rs")
+    App::new("bssrf")
         .version(version)
         .about(
             "Test for SSRF by injecting a location into headers.
             This is a Rust port of m4ll0k's python script.",
         )
-        .usage("rs <urls> -l <location> or rs -l <location>")
+        .usage("bssrf -f <urls.txt> -l <location.com>")
         .arg(Arg::with_name("input").index(1).required(false))
         .arg(
             Arg::with_name("file")
-                .help("rs -f <urls.txt> -l <location>")
+                .help("bssrf -f <urls.txt> -l <location.com>")
                 .short("f")
                 .long("file"),
         )
