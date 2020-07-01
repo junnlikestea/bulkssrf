@@ -2,6 +2,7 @@
 ![release](https://github.com/junnlikestea/bulkssrf/workflows/release/badge.svg)
 [![Build status](https://github.com/junnlikestea/bulkssrf/workflows/Continuous%20integration/badge.svg)](https://github.com/junnlikestea/bulkssrf/actions)
 
+This is a Rust port of [m4ll0k](https://twitter.com/m4ll0k2) `ssrf.py` script. 
 ### Installation
 Precompiled binaries for bssrf are available in the [releases](https://github.com/junnlikestea/bulkssrf/releases) tab. Just pick your platform and extract the archive that contains the binary.
 
