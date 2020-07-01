@@ -36,52 +36,62 @@ const INJECTABLE_HEADERS: &[&str] = &[
     "X-Remote-Addr",
 ];
 
-struct Response {
+async fn fetch(
     url: String,
-    status: u16,
-}
-
-impl Response {
-    fn new(url: String, status: u16) -> Self {
-        Response { url, status }
-    }
-}
-
-async fn fetch(url: String, header: &str, location: String, timeout: u64) -> Result<Response> {
+    header: &str,
+    location: String,
+    timeout: u64,
+    verbose: bool,
+) -> Result<()> {
     let time = Duration::from_secs(timeout);
     let resp = reqwest::Client::new()
         .get(&url)
         .timeout(time)
         .header(header, location)
         .send()
-        .await?;
-    println!("[{}] -> {}", resp.status().as_u16(), &url);
+        .await;
 
-    Ok(Response::new(url.to_owned(), resp.status().as_u16()))
+    match resp {
+        Ok(r) => println!("[{}] -> {}", r.status().as_str(), &url),
+
+        Err(e) => {
+            if verbose {
+                eprintln!(
+                    "Requested: {} but was unreachable, with error: {}.",
+                    &url, e
+                )
+            }
+        }
+    }
+    Ok(())
 }
 
-async fn inject_headers(url: String, location: String, timeout: u64) -> Result<()> {
+async fn inject_headers(url: String, location: String, timeout: u64, verbose: bool) -> Result<()> {
     let mut tasks = Vec::new();
     for header in INJECTABLE_HEADERS.iter() {
         let l = location.clone();
         let u = url.clone();
 
-        tasks.push(tokio::spawn(
-            async move { fetch(u, header, l, timeout).await },
-        ))
+        tasks.push(tokio::spawn(async move {
+            if verbose {
+                println!("Injecting:{} into {} -> {}", &l, header, &u);
+            }
+
+            fetch(u, header, l, timeout, verbose).await
+        }))
     }
 
     join_all(tasks).await;
     Ok(())
 }
 
-pub async fn run(urls: Vec<String>, location: String, timeout: u64) {
+pub async fn run(urls: Vec<String>, location: String, timeout: u64, verbose: bool) {
     const ACTIVE_REQUESTS: usize = 100;
 
     use futures::stream::StreamExt;
     let responses = futures::stream::iter(urls.into_iter().map(|url| {
         let l = location.clone();
-        tokio::spawn(async move { inject_headers(url, l, timeout).await })
+        tokio::spawn(async move { inject_headers(url, l, timeout, verbose).await })
     }))
     .buffer_unordered(ACTIVE_REQUESTS)
     .collect::<Vec<_>>();

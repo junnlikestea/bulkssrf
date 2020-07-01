@@ -9,9 +9,16 @@ use std::io::{self, Read};
 async fn main() -> Result<()> {
     let args = create_clap_app("v0.1.0");
     let matches = args.get_matches();
+    // what if instead of creating a vec of strings, we make a lazy_static vec of &str, and avoid
+    // cloning between function calls?
+    let mut verbose = false;
     let mut urls: Vec<String> = Vec::new();
     let location = matches.value_of("location").unwrap();
     let timeout: u64 = matches.value_of("timeout").unwrap().parse()?;
+
+    if matches.is_present("verbose") {
+        verbose = true;
+    }
 
     if matches.is_present("file") {
         let input = matches.value_of("input").unwrap();
@@ -20,7 +27,8 @@ async fn main() -> Result<()> {
     } else {
         urls = read_stdin()?;
     }
-    run(urls, location.to_string(), timeout).await;
+
+    run(urls, location.to_string(), timeout, verbose).await;
     Ok(())
 }
 
@@ -53,14 +61,16 @@ fn create_clap_app(version: &str) -> clap::App {
                 .default_value("4")
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("verbose")
+                .help("Adds a bunch of debugging messages to the output")
+                .short("v")
+                .long("verbose"),
+        )
 }
 
 fn read_stdin() -> Result<Vec<String>> {
     let mut buffer = String::new();
-    let mut res = Vec::new();
     io::stdin().read_to_string(&mut buffer)?;
-    for line in buffer.split_whitespace() {
-        res.push(line.to_string())
-    }
-    Ok(res)
+    Ok(buffer.split_whitespace().map(|l| l.to_string()).collect())
 }
