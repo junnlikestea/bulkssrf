@@ -7,7 +7,7 @@ use std::io::{self, Read};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args = create_clap_app("v0.1.0");
+    let args = create_clap_app("0.1.0");
     let matches = args.get_matches();
     // what if instead of creating a vec of strings, we make a lazy_static vec of &str, and avoid
     // cloning between function calls?
@@ -36,8 +36,11 @@ fn create_clap_app(version: &str) -> clap::App {
     // Add support to not include subdomains.
     App::new("rs")
         .version(version)
-        .about("Test for SSRF by injecting a location into headers.")
-        .usage("rs <urls> -l <location> or rs -location")
+        .about(
+            "Test for SSRF by injecting a location into headers.
+            This is a Rust port of m4ll0k's python script.",
+        )
+        .usage("rs <urls> -l <location> or rs -l <location>")
         .arg(Arg::with_name("input").index(1).required(false))
         .arg(
             Arg::with_name("file")
@@ -47,7 +50,10 @@ fn create_clap_app(version: &str) -> clap::App {
         )
         .arg(
             Arg::with_name("location")
-                .help("The server address you want the ssrf to hit")
+                .help(
+                    "The server address you want the ssrf to hit, i.e.
+                    xyz.burpcollaborator.com",
+                )
                 .takes_value(true)
                 .required(true)
                 .short("l")
