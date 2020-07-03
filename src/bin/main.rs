@@ -7,10 +7,8 @@ use std::io::{self, Read};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args = create_clap_app("0.1.0");
+    let args = create_clap_app("0.1.1");
     let matches = args.get_matches();
-    // what if instead of creating a vec of strings, we make a lazy_static vec of &str, and avoid
-    // cloning between function calls?
     let mut verbose = false;
     let mut urls: Vec<String> = Vec::new();
     let location = matches.value_of("location").unwrap();
@@ -28,7 +26,7 @@ async fn main() -> Result<()> {
         urls = read_stdin()?;
     }
 
-    run(urls, location.to_owned(), timeout, verbose).await;
+    run(urls, location.into(), timeout, verbose).await;
     Ok(())
 }
 

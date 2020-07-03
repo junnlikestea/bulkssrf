@@ -1,4 +1,4 @@
-use futures::future::join_all;
+use std::sync::Arc;
 use std::time::Duration;
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync + 'static>>;
@@ -20,7 +20,6 @@ const INJECTABLE_HEADERS: &[&str] = &[
     "Redirect",
     "Real-Ip",
     "Referer",
-    "Referer",
     "Referrer",
     "Refferer",
     "Uri",
@@ -37,61 +36,70 @@ const INJECTABLE_HEADERS: &[&str] = &[
 ];
 
 async fn fetch(
-    url: String,
+    url: Arc<String>,
     header: &str,
-    location: String,
+    location: Arc<String>,
     timeout: u64,
     verbose: bool,
 ) -> Result<()> {
     let time = Duration::from_secs(timeout);
+
     let resp = reqwest::Client::new()
-        .get(&url)
+        .get(url.as_str())
         .timeout(time)
-        .header(header, location)
+        .header(header, location.as_str())
         .send()
         .await;
 
     match resp {
-        Ok(r) => println!("[{}] -> {}", r.status().as_str(), &url),
+        Ok(r) => println!("[{}] -> {}", r.status().as_str(), url),
 
         Err(e) => {
             if verbose {
-                eprintln!(
-                    "Requested: {} but was unreachable, with error: {}.",
-                    &url, e
-                )
+                eprintln!("Requested: {} but was unreachable, with error: {}.", url, e)
             }
         }
     }
     Ok(())
 }
 
-async fn inject_headers(url: String, location: String, timeout: u64, verbose: bool) -> Result<()> {
+async fn inject_headers(
+    url: Arc<String>,
+    location: Arc<String>,
+    timeout: u64,
+    verbose: bool,
+) -> Result<()> {
     let mut tasks = Vec::new();
+
     for header in INJECTABLE_HEADERS.iter() {
-        let l = location.clone();
-        let u = url.clone();
+        let url = url.clone();
+        let location = location.clone();
 
         tasks.push(tokio::spawn(async move {
             if verbose {
-                println!("Injecting:{} into {} -> {}", &l, header, &u);
+                println!("Injecting:{} into {} -> {}", location, header, url);
             }
 
-            fetch(u, header, l, timeout, verbose).await
+            fetch(url, header, location, timeout, verbose).await
         }))
     }
 
-    join_all(tasks).await;
+    for t in tasks {
+        t.await?;
+    }
+
     Ok(())
 }
 
 pub async fn run(urls: Vec<String>, location: String, timeout: u64, verbose: bool) {
-    const ACTIVE_REQUESTS: usize = 100;
-
     use futures::stream::StreamExt;
+
+    const ACTIVE_REQUESTS: usize = 100;
+    let shared_location = Arc::new(location);
     let responses = futures::stream::iter(urls.into_iter().map(|url| {
-        let l = location.clone();
-        tokio::spawn(async move { inject_headers(url, l, timeout, verbose).await })
+        let url = Arc::new(url);
+        let loc = shared_location.clone();
+        tokio::spawn(async move { inject_headers(url, loc, timeout, verbose).await })
     }))
     .buffer_unordered(ACTIVE_REQUESTS)
     .collect::<Vec<_>>();
