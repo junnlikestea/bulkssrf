@@ -10,6 +10,7 @@ async fn main() -> Result<()> {
     let args = create_clap_app("0.1.1");
     let matches = args.get_matches();
     let mut verbose = false;
+    let mut proxy = None;
     let mut urls: Vec<String> = Vec::new();
     let location = matches.value_of("location").unwrap();
     let timeout: u64 = matches.value_of("timeout").unwrap().parse()?;
@@ -26,12 +27,15 @@ async fn main() -> Result<()> {
         urls = read_stdin()?;
     }
 
-    run(urls, location.into(), timeout, verbose).await;
+    if matches.is_present("replay-proxy") {
+        proxy = Some(matches.value_of("replay-proxy").unwrap().to_string());
+    }
+
+    run(urls, location.into(), timeout, verbose, proxy).await;
     Ok(())
 }
 
 fn create_clap_app(version: &str) -> clap::App {
-    // Add support to not include subdomains.
     App::new("bssrf")
         .version(version)
         .about(
@@ -70,6 +74,13 @@ fn create_clap_app(version: &str) -> clap::App {
                 .help("Adds a bunch of debugging messages to the output")
                 .short("v")
                 .long("verbose"),
+        )
+        .arg(
+            Arg::with_name("replay-proxy")
+                .help("feed the output of bssrf into an http proxy")
+                .short("p")
+                .long("replay-proxy")
+                .takes_value(true),
         )
 }
 
