@@ -34,6 +34,12 @@ info with the `-v` for verbose flag:
 ```
 gau hackerone.com | bssrf -v -t 10 -l xyzburpcollaborator.com 
 ```
+
+If you want to feed the traffic through an http proxy you can use the `-p` or `-replay-proxy` flag.
+```
+gau hackerone.com | bssrf -l xyzburpcollaborator.com -p http://127.0.0.1:8080
+```
+
 ### Common error
 BulkSSRF uses async concurrent http requests under the hood. If you encounter an error similar to "Too many open files" it means that there isn't enough available file descriptors on your system. You can fix this by increasing the limits available. There are lots of different guides available to increase the limits, [but here is one for linux](https://www.tecmint.com/increase-set-open-file-limits-in-linux/). I actually ran into this problem while writing the code.
 
