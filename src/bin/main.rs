@@ -7,7 +7,7 @@ use std::io::{self, Read};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args = create_clap_app("0.1.1");
+    let args = create_clap_app("0.1.2");
     let matches = args.get_matches();
     let mut verbose = false;
     let mut proxy = None;
